@@ -15,6 +15,7 @@ export default function Upload() {
   const [file, setFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [aiSuggestion, setAiSuggestion] = useState('');
   const navigate = useNavigate();
 
@@ -27,37 +28,54 @@ export default function Upload() {
   const handleUpload = async () => {
     if (!file || !auth.currentUser || !title) return;
     setIsUploading(true);
+    setProgress(0);
 
     try {
       // Upload Video
       const videoRef = ref(storage, `videos/${Date.now()}_${file.name}`);
-      const videoUploadTask = await uploadBytesResumable(videoRef, file);
-      const videoURL = await getDownloadURL(videoUploadTask.ref);
+      const videoUploadTask = uploadBytesResumable(videoRef, file);
 
-      // Upload Thumbnail (if any, otherwise use a placeholder)
-      let thumbnailURL = `https://picsum.photos/seed/${title}/1280/720`;
-      if (thumbnailFile) {
-        const thumbRef = ref(storage, `thumbnails/${Date.now()}_${thumbnailFile.name}`);
-        const thumbUploadTask = await uploadBytesResumable(thumbRef, thumbnailFile);
-        thumbnailURL = await getDownloadURL(thumbUploadTask.ref);
-      }
+      videoUploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setProgress(progress);
+        },
+        (error) => {
+          console.error("Upload error:", error);
+          setIsUploading(false);
+        },
+        async () => {
+          const videoURL = await getDownloadURL(videoUploadTask.snapshot.ref);
+          
+          // Upload Thumbnail (if any, otherwise use a placeholder)
+          let thumbnailURL = `https://picsum.photos/seed/${title}/1280/720`;
+          if (thumbnailFile) {
+            const thumbRef = ref(storage, `thumbnails/${Date.now()}_${thumbnailFile.name}`);
+            const thumbUploadTask = uploadBytesResumable(thumbRef, thumbnailFile);
+            // Wait for thumbnail upload to complete
+            await new Promise((resolve, reject) => {
+              thumbUploadTask.on('state_changed', null, reject, () => resolve(thumbUploadTask.snapshot));
+            });
+            thumbnailURL = await getDownloadURL(thumbUploadTask.snapshot.ref);
+          }
 
-      await addDoc(collection(db, 'videos'), {
-        title,
-        description,
-        category,
-        videoURL,
-        thumbnailURL,
-        authorUID: auth.currentUser.uid,
-        authorName: auth.currentUser.displayName || 'Anonymous',
-        createdAt: new Date().toISOString(),
-        viewCount: 0
-      });
+          await addDoc(collection(db, 'videos'), {
+            title,
+            description,
+            category,
+            videoURL,
+            thumbnailURL,
+            authorUID: auth.currentUser!.uid,
+            authorName: auth.currentUser!.displayName || 'Anonymous',
+            createdAt: new Date().toISOString(),
+            viewCount: 0
+          });
 
-      navigate('/');
+          navigate('/');
+        }
+      );
     } catch (error) {
       console.error("Upload error:", error);
-    } finally {
       setIsUploading(false);
     }
   };
@@ -133,12 +151,17 @@ export default function Upload() {
         >
           {isUploading ? (
             <>
-              <Loader2 className="animate-spin" /> Enviando...
+              <Loader2 className="animate-spin" /> Enviando... {Math.round(progress)}%
             </>
           ) : (
             'Publicar Agora'
           )}
         </button>
+        {isUploading && (
+          <div className="w-full bg-gray-700 rounded-full h-2.5 mt-2">
+            <div className="bg-blue-500 h-2.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+          </div>
+        )}
       </div>
     </div>
   );

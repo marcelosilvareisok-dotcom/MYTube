@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
 import Upload from './components/Upload';
@@ -6,7 +6,7 @@ import Watch from './components/Watch';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <div className="min-h-screen bg-gray-950 text-white font-sans selection:bg-blue-500 selection:text-white">
         <Navbar />
         <main className="container mx-auto">
@@ -19,6 +19,6 @@ export default function App() {
           </Routes>
         </main>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 }

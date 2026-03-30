@@ -1,0 +1,5 @@
+{
+  "name": "MyTube",
+  "description": "A modern, responsive YouTube clone featuring video uploads, user interactions, and AI-powered recommendations.",
+  "requestFramePermissions": []
+}

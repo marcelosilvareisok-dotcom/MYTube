@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string", "format": "uri" }
+      },
+      "required": ["uid", "displayName", "email"]
+    },
+    "Video": {
+      "title": "Video",
+      "description": "Video content information",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "thumbnailURL": { "type": "string", "format": "uri" },
+        "videoURL": { "type": "string", "format": "uri" },
+        "authorUID": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "viewCount": { "type": "number" }
+      },
+      "required": ["title", "videoURL", "authorUID", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": { "$ref": "User" },
+      "description": "User profile collection"
+    },
+    "/videos/{videoId}": {
+      "schema": { "$ref": "Video" },
+      "description": "Video content collection"
+    }
+  }
+}

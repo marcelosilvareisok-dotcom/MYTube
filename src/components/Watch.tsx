@@ -77,7 +77,13 @@ export default function Watch() {
                   <ThumbsDown size={18} />
                 </button>
               </div>
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors">
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  alert('Link copiado para a área de transferência!');
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors"
+              >
                 <Share2 size={18} /> <span className="text-sm font-medium">Compartilhar</span>
               </button>
               <button className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors">

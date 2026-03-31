@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import Home from './components/Home';
 import Upload from './components/Upload';
 import Watch from './components/Watch';
+import Profile from './components/Profile';
 
 export default function App() {
   return (
@@ -14,7 +15,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/watch/:id" element={<Watch />} />
             <Route path="/upload" element={<Upload />} />
-            <Route path="/profile/:user" element={<div className="p-10 text-center text-gray-500">Página de Perfil em breve...</div>} />
+            <Route path="/profile/:user" element={<Profile />} />
             <Route path="/search" element={<div className="p-10 text-center text-gray-500">Página de Busca em breve...</div>} />
           </Routes>
         </main>

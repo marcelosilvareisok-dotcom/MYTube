@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { doc, getDoc, collection, query, limit, getDocs } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, auth } from '../lib/firebase';
 import VideoPlayer from './VideoPlayer';
 import { getRecommendedVideos } from '../services/geminiService';
 import { ThumbsUp, ThumbsDown, Share2, MoreHorizontal } from 'lucide-react';
@@ -11,6 +11,7 @@ export default function Watch() {
   const [video, setVideo] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [liked, setLiked] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -28,7 +29,7 @@ export default function Watch() {
         const allVideos = allVideosSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
         
         // Get AI recommendations
-        const recommendedIds = await getRecommendedVideos(videoData.title, allVideos);
+        const recommendedIds = await getRecommendedVideos(videoData.title, videoData.description);
         const filteredRecs = allVideos.filter(v => recommendedIds.includes(v.id) && v.id !== id);
         
         // Fallback if AI fails or returns nothing
@@ -43,6 +44,14 @@ export default function Watch() {
 
     fetchVideo();
   }, [id]);
+
+  const handleLike = () => {
+    if (!auth.currentUser) {
+      alert('Você precisa estar logado para curtir vídeos.');
+      return;
+    }
+    setLiked(!liked);
+  };
 
   if (loading) return <div className="p-4 animate-pulse">Carregando vídeo...</div>;
   if (!video) return <div className="p-4 text-center">Vídeo não encontrado.</div>;
@@ -70,8 +79,11 @@ export default function Watch() {
 
             <div className="flex items-center gap-2">
               <div className="flex items-center bg-gray-800 rounded-full overflow-hidden">
-                <button className="flex items-center gap-2 px-4 py-2 hover:bg-gray-700 transition-colors border-r border-gray-700">
-                  <ThumbsUp size={18} /> <span className="text-sm font-medium">12K</span>
+                <button 
+                  onClick={handleLike}
+                  className={`flex items-center gap-2 px-4 py-2 hover:bg-gray-700 transition-colors border-r border-gray-700 ${liked ? 'text-blue-400' : ''}`}
+                >
+                  <ThumbsUp size={18} /> <span className="text-sm font-medium">{liked ? '12K+1' : '12K'}</span>
                 </button>
                 <button className="px-4 py-2 hover:bg-gray-700 transition-colors">
                   <ThumbsDown size={18} />

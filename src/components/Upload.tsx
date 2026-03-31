@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc } from 'firebase/firestore';
 import { db, storage, auth } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import { generateThumbnailSuggestion } from '../services/geminiService';
-import { Upload as UploadIcon, Loader2 } from 'lucide-react';
+import { Upload as UploadIcon, Loader2, LogIn } from 'lucide-react';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 const CATEGORIES = ['Música', 'Games', 'Educação', 'Tecnologia', 'Humor'];
 
@@ -17,7 +18,15 @@ export default function Upload() {
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [aiSuggestion, setAiSuggestion] = useState('');
+  const [user, setUser] = useState<User | null>(auth.currentUser);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleAiSuggestion = async () => {
     if (!title) return;
@@ -26,7 +35,7 @@ export default function Upload() {
   };
 
   const handleUpload = async () => {
-    if (!file || !auth.currentUser || !title) return;
+    if (!file || !user || !title) return;
     setIsUploading(true);
     setProgress(0);
 
@@ -42,6 +51,7 @@ export default function Upload() {
         },
         (error) => {
           console.error("Upload error:", error);
+          alert("Erro ao fazer upload: " + error.message);
           setIsUploading(false);
         },
         async () => {
@@ -65,8 +75,8 @@ export default function Upload() {
             category,
             videoURL,
             thumbnailURL,
-            authorUID: auth.currentUser!.uid,
-            authorName: auth.currentUser!.displayName || 'Anonymous',
+            authorUID: user.uid,
+            authorName: user.displayName || 'Anonymous',
             createdAt: new Date().toISOString(),
             viewCount: 0
           });
@@ -74,11 +84,29 @@ export default function Upload() {
           navigate('/');
         }
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error("Upload error:", error);
+      alert("Erro ao salvar vídeo: " + error.message);
       setIsUploading(false);
     }
   };
+
+  if (!user) {
+    return (
+      <div className="max-w-2xl mx-auto p-10 bg-gray-900 rounded-xl shadow-2xl mt-10 text-center">
+        <UploadIcon className="mx-auto text-gray-500 mb-4" size={48} />
+        <h2 className="text-2xl font-bold mb-2">Faça login para enviar vídeos</h2>
+        <p className="text-gray-400 mb-6">Você precisa estar conectado com uma conta do Google para publicar vídeos no MyTube.</p>
+        <button 
+          onClick={() => document.querySelector<HTMLButtonElement>('nav button:last-child')?.click()}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all"
+        >
+          <LogIn size={20} />
+          Fazer Login Agora
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-gray-900 rounded-xl shadow-2xl mt-10">
